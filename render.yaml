@@ -1,0 +1,9 @@
+﻿services:
+  - type: web
+    name: fe-asp-net
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://chuyen-de-asp.onrender.com/api
