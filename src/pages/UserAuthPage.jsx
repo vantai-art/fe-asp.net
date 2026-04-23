@@ -118,7 +118,7 @@ function UserAuthPage() {
                     fullName: registerData.fullName,
                     email: registerData.email,
                     phone: registerData.phone,
-                    role: 'USER' // Backend sẽ tự set nếu null
+                    // role không cần gửi, backend tự set Customer
                 })
             });
 
