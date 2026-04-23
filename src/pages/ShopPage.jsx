@@ -175,16 +175,12 @@ function ShopPage() {
                                     >
                                         <div className="relative h-44 overflow-hidden bg-gray-700 group">
                                             <img
-                                                src={product.imageUrl || 'https://via.placeholder.com/400x400/374151/9ca3af?text=No+Image'}
+                                                src={product.imageUrl || 'https://placehold.co/400x400/374151/9ca3af?text=No+Image'}
                                                 alt={product.name}
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                                                 onError={(e) => {
-                                                    console.error('❌ Shop - Image failed:', product.name);
                                                     e.target.onerror = null;
-                                                    e.target.src = 'https://via.placeholder.com/400x400/374151/9ca3af?text=Error';
-                                                }}
-                                                onLoad={() => {
-                                                    console.log('✅ Shop - Image loaded:', product.name);
+                                                    e.target.src = 'https://placehold.co/400x400/374151/9ca3af?text=No+Image';
                                                 }}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center transition-all">
