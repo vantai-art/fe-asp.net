@@ -1,6 +1,3 @@
-// ==============================
-// ✅ src/contexts/AppContext.jsx
-// ==============================
 import React, {
     createContext,
     useContext,
@@ -38,11 +35,34 @@ export function AppProvider({ children }) {
     const axiosInstance = axios.create({
         baseURL: API_BASE,
         headers: { "Content-Type": "application/json" },
+        withCredentials: true, // ✅ Quan trọng cho CORS
     });
 
+    // ✅ FIXED: Không tự động thêm token cho public endpoints
     useEffect(() => {
+        // Public endpoints không cần token
+        const publicEndpoints = [
+            '/auth/login',
+            '/auth/register',
+            '/food',
+            '/category',
+            '/table'
+        ];
+
+        const isPublicEndpoint = (url) => {
+            if (!url) return false;
+            return publicEndpoints.some(endpoint => url.includes(endpoint));
+        };
+
         const requestInterceptor = axiosInstance.interceptors.request.use(
             (config) => {
+                // Bỏ qua thêm token cho public endpoints
+                if (isPublicEndpoint(config.url)) {
+                    console.log("📢 Public endpoint - no token needed:", config.url);
+                    return config;
+                }
+
+                // Chỉ thêm token cho endpoints cần auth
                 const adminToken = localStorage.getItem("admin_token");
                 const staffToken = localStorage.getItem("staff_token");
                 const userToken = localStorage.getItem("user_token");
@@ -52,17 +72,13 @@ export function AppProvider({ children }) {
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
                     console.log(
-                        "🔑 Token from:",
-                        adminToken
-                            ? "admin"
-                            : staffToken
-                                ? "staff"
-                                : userToken
-                                    ? "user"
-                                    : "legacy"
+                        "🔑 Token added for:",
+                        config.url,
+                        "Role:",
+                        adminToken ? "admin" : staffToken ? "staff" : "user"
                     );
                 } else {
-                    console.warn("⚠️ No token for:", config.url);
+                    console.log("ℹ️ No token available for:", config.url);
                 }
                 return config;
             },
@@ -73,6 +89,14 @@ export function AppProvider({ children }) {
             (res) => res,
             (err) => {
                 const status = err.response?.status;
+                const url = err.config?.url;
+
+                // Bỏ qua lỗi auth cho public endpoints
+                if (url && publicEndpoints.some(endpoint => url.includes(endpoint))) {
+                    console.log("ℹ️ Public endpoint error (ignored):", url, status);
+                    return Promise.reject(err);
+                }
+
                 if (status === 401 || status === 403) {
                     const path = window.location.pathname;
                     console.error("🚫 Auth error at:", path, status);
@@ -100,22 +124,19 @@ export function AppProvider({ children }) {
             axiosInstance.interceptors.request.eject(requestInterceptor);
             axiosInstance.interceptors.response.eject(responseInterceptor);
         };
-    }, []);
+    }, [axiosInstance]);
 
     // ------------------------------
-    // 📡 FETCH DATA BAN ĐẦU
+    // 📡 FETCH DATA BAN ĐẦU (FIXED)
     // ------------------------------
     useEffect(() => {
         const fetchAll = async () => {
             setLoading(true);
             setError(null);
             try {
-                console.log("📡 Fetching data...");
+                console.log("📡 Fetching initial data...");
 
-                const adminToken = localStorage.getItem("admin_token");
-                const staffToken = localStorage.getItem("staff_token");
-                const isPrivileged = !!(adminToken || staffToken);
-
+                // Fetch public data - KHÔNG cần token
                 const [prodRes, catRes, tblRes] = await Promise.allSettled([
                     axiosInstance.get("/food"),
                     axiosInstance.get("/category"),
@@ -124,43 +145,53 @@ export function AppProvider({ children }) {
 
                 // 🗂 Categories
                 let categoriesData = [];
-                if (catRes.status === "fulfilled") {
+                if (catRes.status === "fulfilled" && catRes.value.data) {
                     categoriesData = Array.isArray(catRes.value.data)
                         ? catRes.value.data
-                        : [];
+                        : catRes.value.data.data || [];
                     setCategories(categoriesData);
-                    console.log("📁 Categories:", categoriesData.length);
+                    console.log("📁 Categories loaded:", categoriesData.length);
+                } else if (catRes.status === "rejected") {
+                    console.warn("⚠️ Failed to load categories:", catRes.reason?.message);
                 }
 
                 // 💊 Products
-                if (prodRes.status === "fulfilled") {
+                if (prodRes.status === "fulfilled" && prodRes.value.data) {
                     let productsData = Array.isArray(prodRes.value.data)
                         ? prodRes.value.data
-                        : [];
+                        : prodRes.value.data.data || [];
 
+                    // Map category to product
                     productsData = productsData.map((p) => ({
                         ...p,
-                        category:
-                            categoriesData.find((c) => c.id === p.categoryId) || {
-                                id: p.categoryId,
-                                name: "Khác",
-                            },
+                        category: categoriesData.find((c) => c.id === p.categoryId) || {
+                            id: p.categoryId,
+                            name: "Khác",
+                        },
                     }));
 
                     setProducts(productsData);
-                    console.log("✅ Products:", productsData.length);
+                    console.log("✅ Products loaded:", productsData.length);
+                } else if (prodRes.status === "rejected") {
+                    console.warn("⚠️ Failed to load products:", prodRes.reason?.message);
                 }
 
                 // 🪑 Tables
-                if (tblRes.status === "fulfilled") {
+                if (tblRes.status === "fulfilled" && tblRes.value.data) {
                     const tablesData = Array.isArray(tblRes.value.data)
                         ? tblRes.value.data
-                        : [];
+                        : tblRes.value.data.data || [];
                     setTables(tablesData);
-                    console.log("🪑 Tables:", tablesData.length);
+                    console.log("🪑 Tables loaded:", tablesData.length);
+                } else if (tblRes.status === "rejected") {
+                    console.warn("⚠️ Failed to load tables:", tblRes.reason?.message);
                 }
 
-                // 🧾 Orders (admin/staff only)
+                // 🧾 Orders - chỉ khi có token admin/staff
+                const adminToken = localStorage.getItem("admin_token");
+                const staffToken = localStorage.getItem("staff_token");
+                const isPrivileged = !!(adminToken || staffToken);
+
                 if (isPrivileged) {
                     try {
                         const ordRes = await axiosInstance.get("/order");
@@ -168,24 +199,24 @@ export function AppProvider({ children }) {
                             ? ordRes.data
                             : ordRes.data?.data || [];
                         setOrders(ordersData);
-                        console.log("📋 Orders:", ordersData.length);
+                        console.log("📋 Orders loaded:", ordersData.length);
                     } catch (ordErr) {
-                        console.log("ℹ️ No permission for all orders");
+                        console.log("ℹ️ Cannot load orders:", ordErr.message);
                         setOrders([]);
                     }
                 }
 
-                console.log("✅ Initial data loaded!");
+                console.log("✅ Initial data loaded successfully!");
             } catch (err) {
-                console.error("❌ Load error:", err);
-                setError(err.message);
+                console.error("❌ Error loading initial data:", err);
+                setError(err.message || "Failed to load data");
             } finally {
                 setLoading(false);
             }
         };
 
         fetchAll();
-    }, []);
+    }, []); // Chỉ chạy 1 lần khi mount
 
     // ------------------------------
     // 🛒 GIỎ HÀNG (LOAD + SYNC)
@@ -198,7 +229,7 @@ export function AppProvider({ children }) {
                 if (Array.isArray(parsed)) {
                     setCart(parsed);
                     cartCacheRef.current = parsed;
-                    console.log("📦 Cart loaded:", parsed.length);
+                    console.log("📦 Cart loaded from storage:", parsed.length);
                 }
             }
         } catch (e) {
@@ -218,11 +249,15 @@ export function AppProvider({ children }) {
     useEffect(() => {
         const handleStorage = (e) => {
             if (e.key === "cart_data" && e.newValue) {
-                const newCart = JSON.parse(e.newValue);
-                if (Array.isArray(newCart)) {
-                    setCart(newCart);
-                    cartCacheRef.current = newCart;
-                    console.log("🔄 Cart synced");
+                try {
+                    const newCart = JSON.parse(e.newValue);
+                    if (Array.isArray(newCart)) {
+                        setCart(newCart);
+                        cartCacheRef.current = newCart;
+                        console.log("🔄 Cart synced across tabs");
+                    }
+                } catch (err) {
+                    console.error("Failed to parse cart data:", err);
                 }
             }
         };
@@ -236,11 +271,12 @@ export function AppProvider({ children }) {
     const addToCart = useCallback((product) => {
         setCart((prev) => {
             const exist = prev.find((i) => i.id === product.id);
-            return exist
-                ? prev.map((i) =>
+            if (exist) {
+                return prev.map((i) =>
                     i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
-                )
-                : [...prev, { ...product, quantity: 1 }];
+                );
+            }
+            return [...prev, { ...product, quantity: 1 }];
         });
     }, []);
 
@@ -265,26 +301,27 @@ export function AppProvider({ children }) {
     );
 
     // ------------------------------
-    // 🧾 TẠO ORDER (CHO ADMIN / STAFF)
+    // 🧾 CREATE ORDER
     // ------------------------------
     const createOrder = async (tableId) => {
         const adminToken = localStorage.getItem("admin_token");
         const staffToken = localStorage.getItem("staff_token");
 
         if (!adminToken && !staffToken) {
-            alert("❌ Không có quyền tạo đơn!");
+            alert("❌ Không có quyền tạo đơn hàng!");
             return null;
         }
+
         if (cart.length === 0) {
             alert("🛒 Giỏ hàng trống!");
             return null;
         }
 
         try {
-            console.log("📝 Creating order...");
-            // BE mới: tạo đơn 1 lần duy nhất với items[] bên trong
+            console.log("📝 Creating order for table:", tableId);
+
             const orderRes = await axiosInstance.post("/order", {
-                tableId,
+                tableId: parseInt(tableId),
                 note: "",
                 items: cart.map(item => ({
                     foodId: item.id,
@@ -294,40 +331,49 @@ export function AppProvider({ children }) {
             });
 
             const order = orderRes.data;
-            console.log("✅ Order created:", order.id);
-            // Bàn tự động đổi Occupied do BE xử lý khi tạo đơn
+            console.log("✅ Order created successfully:", order.id);
+
             clearCart();
 
-            console.log("✅ Order completed!");
-
-            if (adminToken) window.location.href = "/admin/orders";
-            if (staffToken) window.location.href = "/staff/orders";
+            // Redirect based on role
+            if (adminToken) {
+                window.location.href = "/admin/orders";
+            } else if (staffToken) {
+                window.location.href = "/staff/orders";
+            }
 
             return order;
         } catch (err) {
-            console.error("❌ Order error:", err);
+            console.error("❌ Order creation error:", err);
+            const message = err.response?.data?.message || err.message;
+            alert(`Tạo đơn hàng thất bại: ${message}`);
             throw err;
         }
     };
 
     // ------------------------------
-    // 📜 LẤY ĐƠN CỦA USER
+    // 📜 FETCH USER ORDERS
     // ------------------------------
     const fetchMyOrders = useCallback(async () => {
         const userToken = localStorage.getItem("user_token");
-        if (!userToken) return [];
+        if (!userToken) {
+            console.log("No user token found");
+            return [];
+        }
 
         try {
-            const res = await axiosInstance.get("/order"); // BE mới: lấy tất cả orders của user đang đăng nhập
-            return Array.isArray(res.data) ? res.data : [];
+            const res = await axiosInstance.get("/order");
+            const orders = Array.isArray(res.data) ? res.data : res.data?.data || [];
+            console.log("📋 My orders fetched:", orders.length);
+            return orders;
         } catch (err) {
-            console.error("❌ My orders error:", err);
+            console.error("❌ Error fetching my orders:", err);
             return [];
         }
     }, []);
 
     // ------------------------------
-    // 🪑 LẤY DANH SÁCH BÀN
+    // 🪑 FETCH TABLES
     // ------------------------------
     const fetchTables = useCallback(async () => {
         try {
@@ -337,7 +383,7 @@ export function AppProvider({ children }) {
             setTables(tablesData);
             return tablesData;
         } catch (err) {
-            console.error("❌ Tables error:", err);
+            console.error("❌ Error fetching tables:", err);
             return [];
         }
     }, []);

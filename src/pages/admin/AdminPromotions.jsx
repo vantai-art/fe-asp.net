@@ -64,7 +64,7 @@ function AdminPromotions() {
                 setPromotions(res.data);
             } else {
                 const [ppRes, proRes, prodRes] = await Promise.all([
-                    fetch('https://chuyen-de-asp.onrender.com/api/promotion', // ⚠️ promotion-products không tồn tại trong BE mới {
+                    fetch('https://chuyen-de-asp.onrender.com/api/promotion', {
                         headers: { 'Authorization': `Bearer ${authAPI.getToken()}` }
                     }),
                     promotionAPI.getAllAdmin(),
