@@ -60,11 +60,13 @@ function UserAuthPage() {
             }
 
             // Lưu token và user info với prefix 'user_'
-            localStorage.setItem('user_token', data.token);
+            // Backend trả về: Token, Username, Role, FullName, UserId (PascalCase hoặc camelCase)
+            localStorage.setItem('user_token', data.token || data.Token);
             localStorage.setItem('user_user', JSON.stringify({
-                id: data.id,
-                username: data.username,
-                role: data.role
+                id: data.userId || data.UserId || data.id,
+                username: data.username || data.Username,
+                role: data.role || data.Role,
+                fullName: data.fullName || data.FullName
             }));
 
             setSuccess('✅ Đăng nhập thành công!');

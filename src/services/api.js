@@ -39,7 +39,13 @@ api.interceptors.response.use(
         console.error('❌ Response error:', error.response?.status, error.message);
         if (error.response?.status === 401) {
             authAPI.logout();
-            window.location.href = '/admin/login';
+            // Chỉ redirect về admin login nếu đang ở trang admin
+            if (window.location.pathname.startsWith('/admin')) {
+                window.location.href = '/admin/login';
+            } else if (window.location.pathname.startsWith('/staff')) {
+                window.location.href = '/staff/login';
+            }
+            // User thường không redirect, để component tự hiện lỗi
         }
         return Promise.reject(error);
     }
