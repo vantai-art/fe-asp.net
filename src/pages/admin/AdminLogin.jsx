@@ -35,7 +35,8 @@ function AdminLogin() {
             const userRole = data.role || data.user?.role;
             console.log("👤 User role:", userRole);
 
-            if (userRole !== "ADMIN") {
+            // ✅ FIX: Backend trả về "Admin" (viết hoa chữ đầu)
+            if (userRole !== "Admin" && userRole !== "ADMIN") {
                 throw new Error("⚠️ Tài khoản này không có quyền Admin!");
             }
 

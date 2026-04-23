@@ -1,11 +1,9 @@
 // src/services/authAPI.js
 import axios from "axios";
 
-// ✅ URL mới: BE deploy trên Render
 const API_URL = "https://chuyen-de-asp.onrender.com/api";
 
 export const authAPI = {
-    // ⚠️ BE mới KHÔNG có /auth/signup - chỉ admin tạo tài khoản qua /auth/register
     signup: async (userData) => {
         try {
             const res = await axios.post(`${API_URL}/auth/register`, userData);
@@ -22,26 +20,21 @@ export const authAPI = {
             const data = res.data;
 
             if (data.token) {
-                // BE mới trả về role là "Admin" hoặc "Staff" (viết hoa chữ đầu)
-                switch (data.role) {
-                    case "Admin":
-                    case "ADMIN":
-                        localStorage.setItem("admin_token", data.token);
-                        localStorage.setItem("admin_user", JSON.stringify(data));
-                        localStorage.setItem("isAdminAuth", "true");
-                        break;
+                // ✅ FIX: Backend trả về "Admin", "Staff", "Customer" (viết hoa chữ đầu)
+                const role = data.role || data.Role || "";
+                const roleLower = role.toLowerCase();
 
-                    case "Staff":
-                    case "STAFF":
-                    case "EMPLOYEE":
-                        localStorage.setItem("staff_token", data.token);
-                        localStorage.setItem("staff_user", JSON.stringify(data));
-                        break;
-
-                    default:
-                        localStorage.setItem("user_token", data.token);
-                        localStorage.setItem("user_user", JSON.stringify(data));
-                        break;
+                if (roleLower === "admin") {
+                    localStorage.setItem("admin_token", data.token);
+                    localStorage.setItem("admin_user", JSON.stringify(data));
+                    localStorage.setItem("isAdminAuth", "true");
+                } else if (roleLower === "staff" || roleLower === "employee") {
+                    localStorage.setItem("staff_token", data.token);
+                    localStorage.setItem("staff_user", JSON.stringify(data));
+                } else {
+                    // Customer / User
+                    localStorage.setItem("user_token", data.token);
+                    localStorage.setItem("user_user", JSON.stringify(data));
                 }
             }
 
@@ -54,15 +47,8 @@ export const authAPI = {
 
     logout: () => {
         [
-            "admin_token",
-            "staff_token",
-            "user_token",
-            "jwt_token",
-            "admin_user",
-            "staff_user",
-            "user_user",
-            "user",
-            "isAdminAuth",
+            "admin_token", "staff_token", "user_token", "jwt_token",
+            "admin_user", "staff_user", "user_user", "user", "isAdminAuth",
         ].forEach((k) => localStorage.removeItem(k));
     },
 
