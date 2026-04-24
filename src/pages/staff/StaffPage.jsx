@@ -286,7 +286,7 @@ function StaffPage() {
             return;
         }
 
-        if (selectedTable.status !== "FREE") {
+        if (selectedTable.status !== "Available") {
             alert("❌ Bàn đã có khách!");
             return;
         }
@@ -371,7 +371,7 @@ function StaffPage() {
                 const billPayload = {
                     orderId: pendingOrderData.orderId,
                     method: methodMap[paymentMethod] || "Cash",
-                    note: `Bàn ${pendingOrderData.table.number} - ${pendingOrderData.customer.name} - PT: ${getPaymentMethodName(paymentMethod)}`
+                    note: `Bàn ${pendingOrderData.table.tableNumber} - ${pendingOrderData.customer.name} - PT: ${getPaymentMethodName(paymentMethod)}`
                 };
 
                 await axiosInstance.post("/payment", billPayload, {
@@ -606,7 +606,7 @@ function StaffPage() {
         </div>
         <div class="info-row">
             <span class="info-label">Bàn:</span>
-            <span>Bàn ${orderData.table.number}</span>
+            <span>Bàn ${orderData.table.tableNumber}</span>
         </div>
         <div class="info-row">
             <span class="info-label">Khách hàng:</span>
@@ -712,7 +712,7 @@ function StaffPage() {
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `HoaDon_Ban${orderData.table.number}_${orderData.orderId}_${Date.now()}.html`;
+                link.download = `HoaDon_Ban${orderData.table.tableNumber}_${orderData.orderId}_${Date.now()}.html`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -891,22 +891,22 @@ function StaffPage() {
                                 <button
                                     key={table.id}
                                     onClick={() => {
-                                        if (table.status !== "FREE") {
+                                        if (table.status !== "Available") {
                                             alert("❌ Bàn đang có khách!");
                                             return;
                                         }
                                         setSelectedTable(table);
                                     }}
-                                    className={`p-3 rounded-lg text-center transition ${table.status === "FREE"
+                                    className={`p-3 rounded-lg text-center transition ${table.status === "Available"
                                         ? selectedTable?.id === table.id
                                             ? "bg-amber-600"
                                             : "bg-green-700 hover:bg-green-600"
                                         : "bg-gray-700 text-gray-400 cursor-not-allowed"
                                         } text-white`}
                                 >
-                                    <div className="font-bold">Bàn {table.number}</div>
+                                    <div className="font-bold">Bàn {table.tableNumber}</div>
                                     <div className="text-xs mt-1">
-                                        {table.status === "FREE" ? "🟢 Trống" : "🔴 Bận"}
+                                        {table.status === "Available" ? "🟢 Trống" : "🔴 Bận"}
                                     </div>
                                 </button>
                             ))}
@@ -1044,9 +1044,9 @@ function StaffPage() {
                                             if (pendingOrderData?.table?.id) {
                                                 try {
                                                     await axiosInstance.put(`/table/${pendingOrderData.table.id}`, {
-                                                        number: pendingOrderData.table.number,
+                                                        number: pendingOrderData.table.tableNumber,
                                                         capacity: pendingOrderData.table.capacity,
-                                                        status: "FREE"
+                                                        status: "Available"
                                                     }, {
                                                         headers: { 'Authorization': `Bearer ${token}` }
                                                     });
@@ -1088,7 +1088,7 @@ function StaffPage() {
                             <div className="bg-gray-700 rounded-lg p-3">
                                 <p className="text-gray-400 text-xs mb-1">Đơn hàng #{pendingOrderData.orderId}</p>
                                 <p className="text-white font-semibold text-sm">
-                                    Bàn {pendingOrderData.table.number} - {pendingOrderData.customer.name}
+                                    Bàn {pendingOrderData.table.tableNumber} - {pendingOrderData.customer.name}
                                 </p>
                                 <p className="text-amber-500 font-bold text-xl mt-1">
                                     {pendingOrderData.total.toLocaleString("vi-VN")}đ
