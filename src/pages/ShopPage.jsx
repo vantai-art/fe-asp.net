@@ -1,4 +1,4 @@
-// src/pages/ShopPage.jsx
+// src/pages/ShopPage.jsx - FIXED
 import React, { useState, useMemo } from 'react';
 import {
     ShoppingCart,
@@ -37,17 +37,18 @@ function ShopPage() {
         document.body.appendChild(notification);
         setTimeout(() => notification.remove(), 2500);
 
-        // Tự động mở giỏ hàng sau khi thêm
         setShowCartSidebar(true);
     };
 
     // ===== LỌC + SẮP XẾP =====
+    // ✅ FIX: chỉ hiện sản phẩm isAvailable=true, không dùng stockQuantity
     const filteredProducts = useMemo(() => {
         let result = products.filter((product) => {
             const matchSearch = product.name
                 ?.toLowerCase()
                 .includes(searchTerm.toLowerCase());
-            return matchSearch;
+            const available = product.isAvailable !== false; // ✅ lọc sản phẩm đang phục vụ
+            return matchSearch && available;
         });
 
         if (sortBy === 'price-asc')
@@ -82,7 +83,6 @@ function ShopPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        {/* Nút giỏ hàng */}
                         <button
                             onClick={() => setShowCartSidebar(true)}
                             className="relative bg-white hover:bg-gray-100 text-amber-700 px-6 py-2 rounded-lg flex items-center gap-2 font-bold transition-colors"
@@ -95,8 +95,6 @@ function ShopPage() {
                                 </span>
                             )}
                         </button>
-
-                        {/* Trang chủ */}
                         <button
                             onClick={() => navigate('/')}
                             className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 font-bold transition-colors"
@@ -115,7 +113,6 @@ function ShopPage() {
                         {/* Thanh công cụ */}
                         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-lg mb-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Ô tìm kiếm */}
                                 <div>
                                     <label className="text-white font-semibold mb-3 block">
                                         Tìm Kiếm
@@ -131,8 +128,6 @@ function ShopPage() {
                                         />
                                     </div>
                                 </div>
-
-                                {/* Chọn sắp xếp */}
                                 <div>
                                     <label className="text-white font-semibold mb-3 block">
                                         Sắp Xếp
@@ -183,14 +178,14 @@ function ShopPage() {
                                                     e.target.src = 'https://placehold.co/400x400/374151/9ca3af?text=No+Image';
                                                 }}
                                             />
+                                            {/* ✅ FIX: dùng isAvailable thay vì stockQuantity */}
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center transition-all">
                                                 <button
                                                     onClick={() => handleAddToCart(product)}
-                                                    disabled={!product.stockQuantity}
-                                                    className="opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 text-sm"
+                                                    className="opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 text-sm"
                                                 >
                                                     <ShoppingCart className="w-4 h-4" />
-                                                    {product.stockQuantity > 0 ? 'Thêm' : 'Hết'}
+                                                    Thêm vào giỏ
                                                 </button>
                                             </div>
                                             <span className="absolute top-2 right-2 bg-amber-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
@@ -208,8 +203,9 @@ function ShopPage() {
                                                 <span className="text-amber-400 font-bold text-sm">
                                                     {(product.price || 0).toLocaleString('vi-VN')}đ
                                                 </span>
-                                                <span className="text-gray-400 text-xs">
-                                                    Còn {product.stockQuantity || 0}
+                                                {/* ✅ FIX: hiện trạng thái dựa vào isAvailable */}
+                                                <span className={`text-xs px-2 py-0.5 rounded-full ${product.isAvailable !== false ? 'text-green-400 bg-green-400/10' : 'text-red-400 bg-red-400/10'}`}>
+                                                    {product.isAvailable !== false ? 'Có sẵn' : 'Hết'}
                                                 </span>
                                             </div>
                                         </div>

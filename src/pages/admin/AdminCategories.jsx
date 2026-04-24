@@ -118,7 +118,7 @@ function AdminCategories() {
             const token = getToken();
 
             if (editingCategory) {
-                // PUT /api/category/{id}  ← BE yêu cầu body phải có Id khớp
+                // PUT /api/category/{id}
                 const res = await fetch(`${API_URL}/category/${editingCategory.id}`, {
                     method: "PUT",
                     headers: {
@@ -126,11 +126,11 @@ function AdminCategories() {
                         Authorization: `Bearer ${token}`,
                     },
                     body: JSON.stringify({
-                        id: editingCategory.id,          // ← BẮT BUỘC: BE kiểm tra id == category.Id
+                        id: editingCategory.id,
                         name: formData.name.trim(),
                         description: formData.description || "",
-                        // imageUrl & color không có trong Category model của BE,
-                        // chỉ truyền các trường BE biết
+                        imageUrl: formData.imageUrl || null,   // ✅ gửi imageUrl
+                        color: formData.color || null,          // ✅ gửi color
                     }),
                 });
 
@@ -149,6 +149,8 @@ function AdminCategories() {
                     body: JSON.stringify({
                         name: formData.name.trim(),
                         description: formData.description || "",
+                        imageUrl: formData.imageUrl || null,   // ✅ gửi imageUrl
+                        color: formData.color || null,          // ✅ gửi color
                     }),
                 });
 

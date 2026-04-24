@@ -1,10 +1,19 @@
 // src/pages/admin/AdminDashboard.jsx  ← FIXED
 import React, { useState, useEffect, useCallback } from 'react';
 import { Package, ShoppingBag, Users, DollarSign, TrendingUp, Loader2, AlertCircle, Calendar, BarChart3 } from 'lucide-react';
-import { useAppContext } from '../../contexts/AppContext';
+import axios from 'axios';
+
+// ✅ Dùng axios trực tiếp với token lấy từ localStorage (không phụ thuộc axiosInstance context)
+const API_BASE = "https://chuyen-de-asp.onrender.com/api";
+
+const apiGet = (path) => {
+    const token = localStorage.getItem("admin_token") || localStorage.getItem("staff_token");
+    return axios.get(`${API_BASE}${path}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+};
 
 function AdminDashboard() {
-    const { axiosInstance } = useAppContext();
     const [stats, setStats] = useState({
         totalProducts: 0, totalOrders: 0, totalCustomers: 0, totalRevenue: 0,
         productChange: 0, orderChange: 0, customerChange: 0, revenueChange: 0
@@ -79,10 +88,10 @@ function AdminDashboard() {
             if (!token) throw new Error("Không tìm thấy token xác thực");
 
             const [productsRes, ordersRes, paymentsRes, usersRes] = await Promise.all([
-                axiosInstance.get('/food'),
-                axiosInstance.get('/order'),
-                axiosInstance.get('/payment').catch(() => ({ data: [] })),
-                axiosInstance.get('/auth/users').catch(() => ({ data: [] }))
+                apiGet('/food'),
+                apiGet('/order'),
+                apiGet('/payment').catch(() => ({ data: [] })),
+                apiGet('/auth/users').catch(() => ({ data: [] }))
             ]);
 
             const products = Array.isArray(productsRes.data) ? productsRes.data : productsRes.data?.data || [];
@@ -153,7 +162,7 @@ function AdminDashboard() {
         } finally {
             setIsLoading(false);
         }
-    }, [timeRange, generateChartData, axiosInstance]);
+    }, [timeRange, generateChartData]);
 
     useEffect(() => { fetchDashboardStats(); }, [fetchDashboardStats]);
 
