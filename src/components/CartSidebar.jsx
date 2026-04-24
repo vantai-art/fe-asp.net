@@ -41,7 +41,7 @@ function CartSidebar({ onClose }) {
                                 {cart.map(item => (
                                     <div key={item.id} className="flex gap-4 border-b pb-4">
                                         <img
-                                            src={item.imageUrl || item.image || 'data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%231f2937'/%3E%3C/svg%3E'}
+                                            src={item.imageUrl || item.image || 'https://placehold.co/80x80/1f2937/6b7280?text=...'}
                                             alt={item.name}
                                             className="w-20 h-20 object-cover rounded"
                                         />
