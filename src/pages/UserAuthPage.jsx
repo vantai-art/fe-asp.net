@@ -1,7 +1,7 @@
 // src/pages/UserAuthPage.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coffee, Lock, User, Eye, EyeOff, Loader, AlertCircle } from 'lucide-react';
+import { Coffee, Mail, Lock, User, Phone, Eye, EyeOff, Loader, AlertCircle } from 'lucide-react';
 
 function UserAuthPage() {
     const navigate = useNavigate();
@@ -10,14 +10,16 @@ function UserAuthPage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    // Login state
+    // Login state - BACKEND DÙNG USERNAME
     const [loginData, setLoginData] = useState({ username: '', password: '' });
     const [showLoginPassword, setShowLoginPassword] = useState(false);
 
-    // Register state - chỉ giữ field BE có
+    // Register state
     const [registerData, setRegisterData] = useState({
         username: '',
+        email: '',
         fullName: '',
+        phone: '',
         password: '',
         confirmPassword: ''
     });
@@ -34,37 +36,48 @@ function UserAuthPage() {
         try {
             const response = await fetch('https://chuyen-de-asp.onrender.com/api/auth/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
-                    username: loginData.username,
+                    username: loginData.username, // Backend dùng username, không phải email
                     password: loginData.password
                 })
             });
 
-            const contentType = response.headers.get('content-type');
-            const data = contentType?.includes('application/json')
-                ? await response.json()
-                : await response.text();
+            // Backend trả về text nếu lỗi, JSON nếu thành công
+            const contentType = response.headers.get("content-type");
+            let data;
+
+            if (contentType && contentType.includes("application/json")) {
+                data = await response.json();
+            } else {
+                data = await response.text();
+            }
 
             if (!response.ok) {
                 throw new Error(typeof data === 'string' ? data : data.message || 'Đăng nhập thất bại');
             }
 
+            // Lưu token và user info với prefix 'user_'
+            // Backend trả về: Token, Username, Role, FullName, UserId (PascalCase hoặc camelCase)
             localStorage.setItem('user_token', data.token || data.Token);
             localStorage.setItem('user_user', JSON.stringify({
-                id: data.userId || data.UserId,
+                id: data.userId || data.UserId || data.id,
                 username: data.username || data.Username,
                 role: data.role || data.Role,
                 fullName: data.fullName || data.FullName
             }));
 
             setSuccess('✅ Đăng nhập thành công!');
+
             setTimeout(() => {
                 navigate('/');
                 window.location.reload();
             }, 1000);
 
         } catch (err) {
+            console.error('Login error:', err);
             setError(err.message || 'Username hoặc mật khẩu không đúng!');
         } finally {
             setLoading(false);
@@ -77,16 +90,19 @@ function UserAuthPage() {
         setError('');
         setSuccess('');
 
-        if (!registerData.username.trim()) {
-            setError('❌ Vui lòng nhập tên đăng nhập!');
+        // Validate
+        if (registerData.password !== registerData.confirmPassword) {
+            setError('❌ Mật khẩu không trùng khớp!');
             return;
         }
+
         if (registerData.password.length < 6) {
             setError('❌ Mật khẩu phải ít nhất 6 ký tự!');
             return;
         }
-        if (registerData.password !== registerData.confirmPassword) {
-            setError('❌ Mật khẩu không trùng khớp!');
+
+        if (!registerData.username.trim()) {
+            setError('❌ Vui lòng nhập tên đăng nhập!');
             return;
         }
 
@@ -95,35 +111,53 @@ function UserAuthPage() {
         try {
             const response = await fetch('https://chuyen-de-asp.onrender.com/api/auth/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     username: registerData.username,
                     password: registerData.password,
-                    fullName: registerData.fullName || null
-                    // Bỏ email, phone vì BE (User model) không có field này
+                    fullName: registerData.fullName,
+                    email: registerData.email,
+                    phone: registerData.phone,
+                    // role không cần gửi, backend tự set Customer
                 })
             });
 
-            const contentType = response.headers.get('content-type');
-            const data = contentType?.includes('application/json')
-                ? await response.json()
-                : await response.text();
+            // Backend trả về text nếu lỗi, JSON nếu thành công
+            const contentType = response.headers.get("content-type");
+            let data;
+
+            if (contentType && contentType.includes("application/json")) {
+                data = await response.json();
+            } else {
+                data = await response.text();
+            }
 
             if (!response.ok) {
                 throw new Error(typeof data === 'string' ? data : data.message || 'Đăng ký thất bại');
             }
 
             setSuccess('✅ Đăng ký thành công! Vui lòng đăng nhập.');
+
+            // Reset form và chuyển sang login
             const savedUsername = registerData.username;
-            setRegisterData({ username: '', fullName: '', password: '', confirmPassword: '' });
+            setRegisterData({
+                username: '',
+                email: '',
+                fullName: '',
+                phone: '',
+                password: '',
+                confirmPassword: ''
+            });
 
             setTimeout(() => {
                 setIsLogin(true);
                 setLoginData({ username: savedUsername, password: '' });
-                setSuccess('');
             }, 1500);
 
         } catch (err) {
+            console.error('Register error:', err);
             setError(err.message || 'Lỗi khi đăng ký!');
         } finally {
             setLoading(false);
@@ -144,12 +178,15 @@ function UserAuthPage() {
 
                 {/* Form Container */}
                 <div className="bg-gray-800 rounded-xl shadow-2xl p-8 border border-gray-700">
+                    {/* Error Message */}
                     {error && (
                         <div className="mb-4 bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg flex items-center gap-2">
                             <AlertCircle className="w-5 h-5 flex-shrink-0" />
                             <span className="text-sm">{error}</span>
                         </div>
                     )}
+
+                    {/* Success Message */}
                     {success && (
                         <div className="mb-4 bg-green-500/10 border border-green-500 text-green-400 px-4 py-3 rounded-lg">
                             <span className="text-sm">{success}</span>
@@ -159,6 +196,7 @@ function UserAuthPage() {
                     {isLogin ? (
                         // LOGIN FORM
                         <form onSubmit={handleLogin} className="space-y-6">
+                            {/* Username (không phải email) */}
                             <div>
                                 <label className="block text-gray-300 mb-2 font-medium text-sm">
                                     <User className="w-4 h-4 inline mr-2" />
@@ -175,6 +213,7 @@ function UserAuthPage() {
                                 />
                             </div>
 
+                            {/* Password */}
                             <div>
                                 <label className="block text-gray-300 mb-2 font-medium text-sm">
                                     <Lock className="w-4 h-4 inline mr-2" />
@@ -201,17 +240,26 @@ function UserAuthPage() {
                                 </div>
                             </div>
 
+                            {/* Submit */}
                             <button
                                 type="submit"
                                 disabled={loading}
                                 className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
                             >
-                                {loading ? <><Loader className="w-5 h-5 animate-spin" />Đang đăng nhập...</> : 'Đăng Nhập'}
+                                {loading ? (
+                                    <>
+                                        <Loader className="w-5 h-5 animate-spin" />
+                                        Đang đăng nhập...
+                                    </>
+                                ) : (
+                                    'Đăng Nhập'
+                                )}
                             </button>
                         </form>
                     ) : (
-                        // REGISTER FORM - chỉ còn username, fullName, password
+                        // REGISTER FORM
                         <form onSubmit={handleRegister} className="space-y-4">
+                            {/* Username */}
                             <div>
                                 <label className="block text-gray-300 mb-2 font-medium text-sm">
                                     <User className="w-4 h-4 inline mr-2" />
@@ -222,12 +270,29 @@ function UserAuthPage() {
                                     value={registerData.username}
                                     onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
                                     className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
-                                    placeholder="Nhập tên đăng nhập (ít nhất 3 ký tự)"
+                                    placeholder="Nhập tên đăng nhập (duy nhất)"
                                     required
                                     disabled={loading}
                                 />
                             </div>
 
+                            {/* Email */}
+                            <div>
+                                <label className="block text-gray-300 mb-2 font-medium text-sm">
+                                    <Mail className="w-4 h-4 inline mr-2" />
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    value={registerData.email}
+                                    onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                                    className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                                    placeholder="Nhập email"
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            {/* Full Name */}
                             <div>
                                 <label className="block text-gray-300 mb-2 font-medium text-sm">
                                     <User className="w-4 h-4 inline mr-2" />
@@ -238,11 +303,28 @@ function UserAuthPage() {
                                     value={registerData.fullName}
                                     onChange={(e) => setRegisterData({ ...registerData, fullName: e.target.value })}
                                     className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
-                                    placeholder="Nhập tên đầy đủ (không bắt buộc)"
+                                    placeholder="Nhập tên đầy đủ"
                                     disabled={loading}
                                 />
                             </div>
 
+                            {/* Phone */}
+                            <div>
+                                <label className="block text-gray-300 mb-2 font-medium text-sm">
+                                    <Phone className="w-4 h-4 inline mr-2" />
+                                    Số Điện Thoại
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={registerData.phone}
+                                    onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
+                                    className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                                    placeholder="Nhập số điện thoại"
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            {/* Password */}
                             <div>
                                 <label className="block text-gray-300 mb-2 font-medium text-sm">
                                     <Lock className="w-4 h-4 inline mr-2" />
@@ -269,6 +351,7 @@ function UserAuthPage() {
                                 </div>
                             </div>
 
+                            {/* Confirm Password */}
                             <div>
                                 <label className="block text-gray-300 mb-2 font-medium text-sm">
                                     <Lock className="w-4 h-4 inline mr-2" />
@@ -295,12 +378,20 @@ function UserAuthPage() {
                                 </div>
                             </div>
 
+                            {/* Submit */}
                             <button
                                 type="submit"
                                 disabled={loading}
                                 className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
                             >
-                                {loading ? <><Loader className="w-5 h-5 animate-spin" />Đang đăng ký...</> : 'Đăng Ký'}
+                                {loading ? (
+                                    <>
+                                        <Loader className="w-5 h-5 animate-spin" />
+                                        Đang đăng ký...
+                                    </>
+                                ) : (
+                                    'Đăng Ký'
+                                )}
                             </button>
                         </form>
                     )}
@@ -311,7 +402,11 @@ function UserAuthPage() {
                             {isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
                         </p>
                         <button
-                            onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); }}
+                            onClick={() => {
+                                setIsLogin(!isLogin);
+                                setError('');
+                                setSuccess('');
+                            }}
                             className="text-amber-500 hover:text-amber-400 font-semibold text-sm"
                             disabled={loading}
                         >
