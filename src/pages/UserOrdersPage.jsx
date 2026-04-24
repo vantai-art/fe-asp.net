@@ -75,7 +75,7 @@ function UserOrdersPage() {
 
             // Tạo CSV content
             let csv = "data:text/csv;charset=utf-8,\uFEFF";
-            csv += "HOA DON COFFEE BLEND\n";
+            csv += "HOA DON FOOD AND DRINK\n";
             csv += "================================\n";
             csv += `Ma don hang,${order.id}\n`;
             csv += `Ngay tao,${formatDate(order.createdAt)}\n`;
@@ -97,7 +97,7 @@ function UserOrdersPage() {
 
             csv += `\nTONG CONG,,,${total.toLocaleString("vi-VN")} VND\n`;
             csv += "\nCam on quy khach!\n";
-            csv += "COFFEE BLEND - Cafe & Restaurant";
+            csv += "FOOD AND DRINK - Cafe & Restaurant";
 
             // Download file
             const uri = encodeURI(csv);

@@ -167,12 +167,12 @@ function StaffPage() {
         } else if (method === "VNPAY") {
             const bank = "TPBANK";
             const account = "0328778198";
-            const accountName = "COFFEE BLEND";
+            const accountName = "FOOD AND DRINK";
             qrUrl = `https://img.vietqr.io/image/${bank}-${account}-compact2.png?amount=${amount}&addInfo=Don%20${orderId}&accountName=${encodeURIComponent(accountName)}`;
         } else if (method === "PAYOS") {
             const bank = "TPBANK";
             const account = "0328778198";
-            const accountName = "COFFEE BLEND";
+            const accountName = "FOOD AND DRINK";
             qrUrl = `https://img.vietqr.io/image/${bank}-${account}-compact2.png?amount=${amount}&addInfo=Don%20${orderId}&accountName=${encodeURIComponent(accountName)}`;
         } else {
             qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`Payment: ${amount}VND - Order: ${orderId}`)}`;
@@ -590,7 +590,7 @@ function StaffPage() {
 </head>
 <body>
     <div class="header">
-        <h1>☕ COFFEE BLEND</h1>
+        <h1>☕ FOOD AND DRINK</h1>
         <h2>HÓA ĐƠN THANH TOÁN</h2>
     </div>
 
@@ -669,7 +669,7 @@ function StaffPage() {
 
     <div class="footer">
         <p style="font-size: 18px; font-weight: bold; color: #d97706;">Cảm ơn quý khách! Hẹn gặp lại! 🙏</p>
-        <p style="font-size: 14px; margin-top: 10px;">COFFEE BLEND - Dịch vụ chuyên nghiệp, chất lượng</p>
+        <p style="font-size: 14px; margin-top: 10px;">FOOD AND DRINK - Dịch vụ chuyên nghiệp, chất lượng</p>
         <p style="font-size: 12px; color: #999;">Hotline: 1900 xxxx | Email: contact@coffeeblend.vn</p>
     </div>
 
@@ -762,7 +762,8 @@ function StaffPage() {
     const filteredProducts = products.filter((p) => {
         const matchSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchCat = selectedCategory === "Tất cả" || p.category?.name === selectedCategory;
-        return matchSearch && matchCat;
+        const available = p.isAvailable !== false; // ✅ chỉ hiện món đang phục vụ
+        return matchSearch && matchCat && available;
     });
 
     const sliderProgress = containerRef.current && slideRef.current
@@ -837,7 +838,7 @@ function StaffPage() {
                         <button
                             key={product.id}
                             onClick={() => handleAddToCart(product)}
-                            disabled={!product.stockQuantity}
+                            disabled={false}
                             className="bg-gray-800 rounded-lg p-4 hover:bg-gray-700 text-left disabled:opacity-50 transition"
                         >
                             <div className="aspect-square bg-gray-700 rounded-lg mb-3 overflow-hidden">
@@ -863,8 +864,8 @@ function StaffPage() {
                             <p className="text-amber-500 font-bold">
                                 {product.price?.toLocaleString("vi-VN")}đ
                             </p>
-                            <p className={`text-sm ${product.stockQuantity > 0 ? "text-gray-500" : "text-red-500"}`}>
-                                {product.stockQuantity > 0 ? `Còn: ${product.stockQuantity}` : "Hết hàng"}
+                            <p className="text-sm text-green-500">
+                                Có sẵn
                             </p>
                         </button>
                     ))}

@@ -97,7 +97,7 @@ function UserAuthPage() {
                     <div className="inline-flex items-center justify-center w-20 h-20 bg-amber-600 rounded-full mb-4">
                         <Coffee className="w-10 h-10 text-white" />
                     </div>
-                    <h1 className="text-3xl font-bold text-white mb-2">COFFEE BLEND</h1>
+                    <h1 className="text-3xl font-bold text-white mb-2">FOOD AND DRINK</h1>
                     <p className="text-gray-400">{isLogin ? 'Đăng Nhập' : 'Tạo Tài Khoản'}</p>
                 </div>
 

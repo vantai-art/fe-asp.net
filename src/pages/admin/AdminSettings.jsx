@@ -6,7 +6,7 @@ function AdminSettings() {
     const { axiosInstance } = useAppContext();
     const [settings, setSettings] = useState({
         // Thông tin chung
-        storeName: "Coffee Blend",
+        storeName: "FOOD AND DRINK",
         storeEmail: "contact@coffeeblend.vn",
         storePhone: "0328778198",
         storeAddress: "2/60, Thủ Đức, TP.HCM",

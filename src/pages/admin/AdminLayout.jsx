@@ -65,7 +65,7 @@ function AdminLayout({ children, currentPage, setCurrentPage, onLogout }) {
                         <div className="flex items-center space-x-2">
                             <Coffee className="w-8 h-8 text-amber-500" />
                             <div className="text-white">
-                                <div className="text-lg font-bold">COFFEE BLEND</div>
+                                <div className="text-lg font-bold">FOOD AND DRINK</div>
                                 <div className="text-xs text-gray-400">Admin Panel</div>
                             </div>
                         </div>
@@ -85,8 +85,8 @@ function AdminLayout({ children, currentPage, setCurrentPage, onLogout }) {
                             key={item.id}
                             onClick={() => handleMenuClick(item.id)}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${currentPage === item.id
-                                    ? 'bg-amber-600 text-white shadow-lg'
-                                    : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                                ? 'bg-amber-600 text-white shadow-lg'
+                                : 'text-gray-400 hover:bg-gray-700 hover:text-white'
                                 }`}
                             title={!sidebarOpen ? item.label : ''}
                         >

@@ -51,7 +51,7 @@ function Header() {
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-3 group">
                             <Coffee className="w-8 h-8 text-amber-500 group-hover:text-amber-400 transition-colors" />
-                            <span className="text-2xl font-bold text-white">COFFEE BLEND</span>
+                            <span className="text-2xl font-bold text-white">FOOD AND DRINKS</span>
                         </Link>
 
                         {/* Desktop Navigation */}

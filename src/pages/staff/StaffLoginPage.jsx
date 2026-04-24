@@ -110,7 +110,7 @@ function StaffLoginPage() {
                 <div className="text-center mb-8">
                     <div className="flex items-center justify-center gap-3 mb-4">
                         <Coffee className="w-12 h-12 text-amber-500" />
-                        <h1 className="text-4xl font-bold text-white">COFFEE BLEND</h1>
+                        <h1 className="text-4xl font-bold text-white">FOOD AND DRINK</h1>
                     </div>
                     <p className="text-amber-200 text-lg font-semibold">Staff Login</p>
                     <p className="text-gray-400 text-sm mt-1">Đăng nhập cho nhân viên</p>

@@ -11,7 +11,7 @@ function Footer() {
                         <div className="flex items-center space-x-2 mb-4">
                             <Coffee className="w-8 h-8 text-amber-500" />
                             <div>
-                                <div className="text-xl font-bold text-white">COFFEE BLEND</div>
+                                <div className="text-xl font-bold text-white">FOOD AND DRINK</div>
                                 <div className="text-xs tracking-widest text-gray-400">PREMIUM COFFEE</div>
                             </div>
                         </div>
@@ -95,8 +95,8 @@ function Footer() {
 
                 {/* Copyright */}
                 <div className="border-t border-gray-800 mt-12 pt-8 text-center text-sm">
-                    <p>&copy; 2024 Coffee Blend. Tất cả quyền được bảo lưu.</p>
-                    <p className="text-gray-500 mt-2">Thiết kế bởi Coffee Blend Team</p>
+                    <p>&copy; 2024 FOOD AND DRINK. Tất cả quyền được bảo lưu.</p>
+                    <p className="text-gray-500 mt-2">Thiết kế bởi FOOD AND DRINK Team</p>
                 </div>
             </div>
         </footer>

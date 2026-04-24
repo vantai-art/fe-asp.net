@@ -192,7 +192,7 @@ export function AppProvider({ children }) {
                 try {
                     const newCart = JSON.parse(e.newValue);
                     if (Array.isArray(newCart)) setCart(newCart);
-                } catch {}
+                } catch { }
             }
         };
         window.addEventListener("storage", handleStorage);
