@@ -1,13 +1,39 @@
-// src/pages/admin/AdminLogin.jsx
-import React, { useState } from "react";
+// src/pages/admin/AdminLogin.jsx  ← FIXED
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, User, Coffee, AlertCircle } from "lucide-react";
+import { Lock, User, Coffee, AlertCircle, Eye, EyeOff } from "lucide-react";
+
+const API_URL = "https://chuyen-de-asp.onrender.com/api";
 
 function AdminLogin() {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({ username: "", password: "" });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showPw, setShowPw] = useState(false);
+
+    // Nếu đã đăng nhập rồi thì redirect luôn
+    useEffect(() => {
+        const token = localStorage.getItem("admin_token");
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split(".")[1]));
+                // Kiểm tra token chưa hết hạn
+                if (payload.exp * 1000 > Date.now()) {
+                    navigate("/admin", { replace: true });
+                } else {
+                    // Token hết hạn → xóa
+                    localStorage.removeItem("admin_token");
+                    localStorage.removeItem("admin_user");
+                    localStorage.removeItem("isAdminAuth");
+                }
+            } catch {
+                localStorage.removeItem("admin_token");
+                localStorage.removeItem("admin_user");
+                localStorage.removeItem("isAdminAuth");
+            }
+        }
+    }, [navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -15,46 +41,48 @@ function AdminLogin() {
         setLoading(true);
 
         try {
-            console.log("🔐 Attempting admin login...");
-
-            const response = await fetch("https://chuyen-de-asp.onrender.com/api/auth/login", {
+            const response = await fetch(`${API_URL}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    username: formData.username.trim(),
+                    password: formData.password,
+                }),
             });
 
+            // Đọc body dù là lỗi
+            const data = await response.json().catch(() => ({}));
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Đăng nhập thất bại");
+                // BE trả về { message: "..." } khi lỗi
+                throw new Error(data.message || `Lỗi ${response.status}: Đăng nhập thất bại`);
             }
 
-            const data = await response.json();
-            console.log("✅ Login response:", data);
+            // ✅ BE trả về: { token, username, role, fullName, email, phone, userId }
+            // Lưu ý: BE dùng PascalCase trong AuthResponseDto nhưng JSON serializer
+            // của ASP.NET Core mặc định ra camelCase → token, username, role, userId
+            const token = data.token || data.Token;
+            const role = data.role || data.Role || "";
+            const userId = data.userId || data.UserId;
+            const username = data.username || data.Username;
+            const fullName = data.fullName || data.FullName;
 
-            // ✅ KIỂM TRA ROLE
-            const userRole = data.role || data.user?.role;
-            console.log("👤 User role:", userRole);
-
-            // ✅ FIX: Backend trả về "Admin" (viết hoa chữ đầu)
-            if (userRole !== "Admin" && userRole !== "ADMIN") {
-                throw new Error("⚠️ Tài khoản này không có quyền Admin!");
+            if (!token) {
+                throw new Error("Server không trả về token. Vui lòng thử lại!");
             }
 
-            // ✅ LƯU TOKEN VÀ USER INFO
-            localStorage.setItem("admin_token", data.token);
-            localStorage.setItem("admin_user", JSON.stringify({
-                id: data.id || data.userId,
-                username: data.username,
-                role: userRole
-            }));
+            // ✅ Kiểm tra role phải là "Admin"
+            if (role !== "Admin" && role !== "ADMIN") {
+                throw new Error("Tài khoản này không có quyền Admin!");
+            }
+
+            // ✅ Lưu vào localStorage
+            localStorage.setItem("admin_token", token);
+            localStorage.setItem("admin_user", JSON.stringify({ id: userId, username, role, fullName }));
             localStorage.setItem("isAdminAuth", "true");
 
-            console.log("✅ Admin logged in successfully");
-
-            // ✅ CHUYỂN HƯỚNG
-            setTimeout(() => {
-                navigate("/admin", { replace: true });
-            }, 100);
+            // Chuyển trang
+            navigate("/admin", { replace: true });
 
         } catch (err) {
             console.error("❌ Login error:", err);
@@ -79,9 +107,9 @@ function AdminLogin() {
                 {/* Login Form */}
                 <div className="bg-gray-800 rounded-lg shadow-2xl border border-gray-700 p-8">
                     {error && (
-                        <div className="mb-6 bg-red-500/10 border border-red-500 text-red-400 px-4 py-3 rounded-lg flex items-center gap-3">
-                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                            <span>{error}</span>
+                        <div className="mb-6 bg-red-500/10 border border-red-500 text-red-400 px-4 py-3 rounded-lg flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm">{error}</span>
                         </div>
                     )}
 
@@ -96,11 +124,10 @@ function AdminLogin() {
                                 <input
                                     type="text"
                                     value={formData.username}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, username: e.target.value })
-                                    }
-                                    className="w-full bg-gray-700 text-white pl-12 pr-4 py-3 rounded-lg border border-gray-600 focus:border-amber-500 outline-none"
+                                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                    className="w-full bg-gray-700 text-white pl-12 pr-4 py-3 rounded-lg border border-gray-600 focus:border-amber-500 outline-none transition-colors"
                                     placeholder="Nhập tên đăng nhập"
+                                    autoComplete="username"
                                     required
                                 />
                             </div>
@@ -114,27 +141,33 @@ function AdminLogin() {
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
-                                    type="password"
+                                    type={showPw ? "text" : "password"}
                                     value={formData.password}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, password: e.target.value })
-                                    }
-                                    className="w-full bg-gray-700 text-white pl-12 pr-4 py-3 rounded-lg border border-gray-600 focus:border-amber-500 outline-none"
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    className="w-full bg-gray-700 text-white pl-12 pr-12 py-3 rounded-lg border border-gray-600 focus:border-amber-500 outline-none transition-colors"
                                     placeholder="Nhập mật khẩu"
+                                    autoComplete="current-password"
                                     required
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPw(!showPw)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                                >
+                                    {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
                             </div>
                         </div>
 
-                        {/* Submit Button */}
+                        {/* Submit */}
                         <button
                             type="submit"
-                            disabled={loading}
-                            className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 text-white py-3 rounded-lg font-bold transition-colors flex items-center justify-center gap-2"
+                            disabled={loading || !formData.username || !formData.password}
+                            className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-3 rounded-lg font-bold transition-colors flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <>
-                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
+                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white" />
                                     <span>Đang đăng nhập...</span>
                                 </>
                             ) : (
@@ -143,23 +176,15 @@ function AdminLogin() {
                         </button>
                     </form>
 
-                    {/* Back to Home */}
                     <div className="mt-6 text-center">
                         <button
                             onClick={() => navigate("/")}
-                            className="text-gray-400 hover:text-amber-500 transition-colors"
+                            className="text-gray-400 hover:text-amber-500 transition-colors text-sm"
                         >
                             ← Quay về trang chủ
                         </button>
                     </div>
                 </div>
-
-                {/* Debug Info (Development only) */}
-                {process.env.NODE_ENV === 'development' && (
-                    <div className="mt-4 text-center text-xs text-gray-500">
-                        Hint: username=admin, password=admin
-                    </div>
-                )}
             </div>
         </div>
     );
