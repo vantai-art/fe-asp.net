@@ -207,8 +207,17 @@ function AdminProducts() {
                 headers: { Authorization: `Bearer ${getToken()}` },
             });
             if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.message || `Lỗi ${res.status}`);
+                const errData = await res.json().catch(() => ({}));
+                const msg = errData.message || `Lỗi ${res.status}`;
+                // Gợi ý tắt phục vụ thay vì xóa khi món đã có trong đơn hàng
+                if (res.status === 400 && msg.includes("đơn hàng")) {
+                    const doToggle = window.confirm(
+                        `⚠️ Không thể xóa:\n"${msg}"\n\nBạn có muốn ẩn/tắt phục vụ món này thay thế không?`
+                    );
+                    if (doToggle) await handleToggle(id);
+                    return;
+                }
+                throw new Error(msg);
             }
             setProducts((prev) => prev.filter((p) => p.id !== id));
             alert("✅ Xóa sản phẩm thành công!");
@@ -288,10 +297,10 @@ function AdminProducts() {
                         >
                             <div className="relative">
                                 <img
-                                    src={product.imageUrl || "https://via.placeholder.com/400"}
+                                    src={product.imageUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%231f2937'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236b7280' font-size='16'%3EKhông có ảnh%3C/text%3E%3C/svg%3E"}
                                     alt={product.name}
                                     className="w-full h-48 object-cover"
-                                    onError={(e) => { e.target.src = "https://via.placeholder.com/400?text=No+Image"; }}
+                                    onError={(e) => { e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%231f2937'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236b7280' font-size='16'%3EKhông có ảnh%3C/text%3E%3C/svg%3E"; }}
                                 />
                                 {!product.isAvailable && (
                                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -435,7 +444,7 @@ function AdminProducts() {
                                             src={previewImage}
                                             alt="Preview"
                                             className="w-full h-48 object-cover rounded border border-gray-600"
-                                            onError={(e) => { e.target.src = "https://via.placeholder.com/400?text=Invalid+Image"; }}
+                                            onError={(e) => { e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%231f2937'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236b7280' font-size='16'%3EKhông có ảnh%3C/text%3E%3C/svg%3E"; }}
                                         />
                                         <button
                                             onClick={() => { setPreviewImage(""); setFormData((f) => ({ ...f, imageUrl: "" })); }}

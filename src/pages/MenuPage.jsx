@@ -192,11 +192,11 @@ function MenuPage() {
                                         {/* Image */}
                                         <div className="relative h-56 overflow-hidden bg-gray-800 group">
                                             <img
-                                                src={product.imageUrl || 'https://via.placeholder.com/400x400/1f2937/d97706?text=No+Image'}
+                                                src={product.imageUrl || 'data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%231f2937'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236b7280' font-size='16'%3EKhông có ảnh%3C/text%3E%3C/svg%3E'}
                                                 alt={product.name}
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
-                                                    e.target.src = 'https://via.placeholder.com/400x400/1f2937/d97706?text=No+Image';
+                                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%231f2937'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236b7280' font-size='16'%3EKhông có ảnh%3C/text%3E%3C/svg%3E';
                                                 }}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center transition-all">

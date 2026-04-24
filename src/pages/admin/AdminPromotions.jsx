@@ -643,7 +643,7 @@ function AdminPromotions() {
                                                         >
                                                             <div className="flex items-center gap-3">
                                                                 <img
-                                                                    src={product.imageUrl || 'https://via.placeholder.com/50'}
+                                                                    src={product.imageUrl || 'data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%231f2937'/%3E%3C/svg%3E'}
                                                                     alt={product.name}
                                                                     className="w-10 h-10 object-cover rounded"
                                                                 />
